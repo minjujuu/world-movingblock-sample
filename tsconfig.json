@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "es2020",
+		"experimentalDecorators": true,
+		"inlineSourceMap": true,
+		"stripInternal": true,
+		"plugins": [
+			{
+				"name": "zepeto-script-compiler"
+			}
+		],
+		"types": []
+	}
+}

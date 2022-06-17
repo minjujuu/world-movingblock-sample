@@ -1,0 +1,464 @@
+fileFormatVersion: 2
+guid: acb6cee3d235bab458a0bc2ba9fce524
+importerOverride: ZEPETO.Script.Compiler:ZEPETO.Script:TypescriptAssetImporter
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: -1123457745, guid: 54cf806323ffe4418a4ce4cc63fe6b9d, type: 3}
+  isAssemblyDeclarations: 0
+  assembly: 
+  generateAllTypes: 1
+  types: []
+  generateWrapper: 0
+  overrideWrapperTypes: 0
+  wrapperTypes: []
+  WrapperFilters: []
+  wrapperOutputDirectory: Generated
+  compiledResult: "{\"source\":\"\\\"use strict\\\";\\r\\nObject.defineProperty(exports,
+    \\\"__esModule\\\", { value: true });\\r\\nconst UnityEngine_1 = require(\\\"UnityEngine\\\");\\r\\nconst
+    ZEPETO_Multiplay_1 = require(\\\"ZEPETO.Multiplay\\\");\\r\\nconst ZEPETO_Script_1
+    = require(\\\"ZEPETO.Script\\\");\\r\\nconst ZEPETO_Character_Controller_1 =
+    require(\\\"ZEPETO.Character.Controller\\\");\\r\\nconst CharacterEventChecker_1
+    = require(\\\"./CharacterEventChecker\\\");\\r\\nconst CarrierParentController_1
+    = require(\\\"./CarrierParentController\\\");\\r\\nconst MultiMovingBlock_1 =
+    require(\\\"./MultiMovingBlock\\\");\\r\\nconst MultiOrbitingBlock_1 = require(\\\"./MultiOrbitingBlock\\\");\\r\\nclass
+    BlockMultiplay extends ZEPETO_Script_1.ZepetoScriptBehaviour {\\r\\n    constructor()
+    {\\r\\n        super(...arguments);\\r\\n        // \uD604\uC7AC \uBE14\uB7ED\uC758
+    \uC778\uB371\uC2A4\uC785\uB2C8\uB2E4.\\r\\n        this.blockIdx = 0;\\r\\n       
+    this.originCharacterParents = new Map();\\r\\n        this.characterContexts
+    = new Map();\\r\\n        this.carrierParents = new Map();\\r\\n        // \uBE14\uB7ED
+    \uB3D9\uAE30\uD654\uB97C \uC704\uD55C \uBCC0\uC218 \\r\\n        this.gameStartTimestampFromServer
+    = 0;\\r\\n        this.diffTimestamp = 0;\\r\\n        // \uD50C\uB808\uC774\uC5B4\uAC00
+    \uBC31\uADF8\uB77C\uC6B4\uB4DC\uB85C \uB098\uAC14\uB2E4 \uB3CC\uC544\uC628 \uACBD\uC6B0\uB97C
+    \uD310\uB2E8\uD558\uB294 \uBCC0\uC218\uC785\uB2C8\uB2E4.\\r\\n        this.bPaused
+    = false;\\r\\n        this.isLanding = new Map();\\r\\n        this.playerTargetPosition
+    = new Map();\\r\\n        this.jumpCoroutines = new Map();\\r\\n        this.changeTargetPositionCoroutines
+    = new Map();\\r\\n        this.playerJumpDistances = new Map();\\r\\n       
+    this.playerFlightDuration = new Map();\\r\\n        this.playerJumpDistance =
+    3;\\r\\n        this.waitForChangeTargetSeconds = new UnityEngine_1.WaitForSeconds(0.1);\\r\\n       
+    this.isLandingPlatform = new Map();\\r\\n        this.MESSAGE_TYPE_ServerTimestamp
+    = \\\"ServerTimestamp\\\";\\r\\n        this.MESSAGE_TYPE_OnBlockTriggerEnter
+    = \\\"OnBlockTriggerEnter\\\";\\r\\n        this.MESSAGE_TYPE_OnCharacterLandedBlock
+    = \\\"OnCharacterLandedBlock\\\";\\r\\n        this.MESSAGE_TYPE_OnCharacterJumpOnBlock
+    = \\\"OnCharacterJumpOnBlock\\\";\\r\\n        this.MESSAGE_TYPE_OnTryJump =
+    \\\"OnTryJump\\\";\\r\\n        this.MESSAGE_TYPE_OnPlatformState = \\\"OnPlatformState\\\";\\r\\n       
+    this.MESSAGE_TYPE_OnFallTriggerEnter = \\\"OnFallTriggerEnter\\\";\\r\\n       
+    this.MESSAGE_TYPE_OnTryJumpForMovingToBlock = \\\"OnTryJumpForMovingToBlock\\\";\\r\\n       
+    this.MESSAGE_TYPE_OnLeavePlayer = \\\"OnLeavePlayer\\\";\\r\\n        this.MOVINGBLOCK
+    = 0;\\r\\n        this.ORBITINGBLOCK = 1;\\r\\n        this.FIRSTBLOCK = 2;\\r\\n   
+    }\\r\\n    /* Singleton */\\r\\n    static GetInstance() {\\r\\n        if (!BlockMultiplay.Instance)
+    {\\r\\n            const targetObj = UnityEngine_1.GameObject.Find(\\\"BlockMultiplay\\\");\\r\\n           
+    if (targetObj)\\r\\n                BlockMultiplay.Instance = targetObj.GetComponent($typeof(BlockMultiplay));\\r\\n       
+    }\\r\\n        return BlockMultiplay.Instance;\\r\\n    }\\r\\n    Start() {\\r\\n       
+    this.bPaused = false;\\r\\n        this.blockIdx = 0;\\r\\n        this.movingBlockScripts
+    = new Array(this.movingBlocks.length);\\r\\n        this.orbitingBlockScripts
+    = new Array(this.orbitingBlocks.length);\\r\\n        for (let i = 0; i < this.movingBlocks.length;
+    i++) {\\r\\n            this.movingBlockScripts[i] = this.movingBlocks[i].GetComponent($typeof(MultiMovingBlock_1.default));\\r\\n           
+    this.movingBlockScripts[i].SetBlockIdx(this.blockIdx++);\\r\\n        }\\r\\n       
+    for (let i = 0; i < this.orbitingBlocks.length; i++) {\\r\\n            this.orbitingBlockScripts[i]
+    = this.orbitingBlocks[i].GetComponent($typeof(MultiOrbitingBlock_1.default));\\r\\n           
+    this.orbitingBlockScripts[i].SetBlockIdx(this.blockIdx++);\\r\\n        }\\r\\n       
+    this.multiplay.add_RoomCreated((room) => {\\r\\n            this.room = room;\\r\\n           
+    this.AddMessageHandlersForBlockSync();\\r\\n            this.AddMessageHandlersForCharacterSync();\\r\\n       
+    });\\r\\n        // \uB85C\uCEEC \uCE90\uB9AD\uD130\uC5D0 \uBE14\uB85D\uACFC\uC758
+    \uCDA9\uB3CC \uCCB4\uD06C\uB97C \uC704\uD55C \uC2A4\uD06C\uB9BD\uD2B8 \uCD94\uAC00\\r\\n       
+    ZEPETO_Character_Controller_1.ZepetoPlayers.instance.OnAddedLocalPlayer.AddListener(()
+    => {\\r\\n            ZEPETO_Character_Controller_1.ZepetoPlayers.instance.LocalPlayer.zepetoPlayer.character.gameObject.AddComponent($typeof(CharacterEventChecker_1.default));\\r\\n       
+    });\\r\\n    }\\r\\n    OnApplicationPause(pause) {\\r\\n        // \uBC31\uADF8\uB77C\uC6B4\uB4DC
+    \uAC14\uB2E4\uAC00 \uB3CC\uC544\uC628 \uACBD\uC6B0 \uBE14\uB85D \uC704\uCE58
+    \uB3D9\uAE30\uD654 \uC7AC\uC124\uC815\\r\\n        if (pause) {\\r\\n           
+    this.bPaused = true;\\r\\n        }\\r\\n        else {\\r\\n            if (this.bPaused)
+    {\\r\\n                this.bPaused = false;\\r\\n                // \uD604\uC7AC
+    timestamp \\r\\n                let curClientTimestamp = +new Date();\\r\\n               
+    // \uC9C4\uD589\uB41C \uC2DC\uAC04 = \uD604\uC7AC timestamp - (\uAC8C\uC784 \uC2DC\uC791
+    timestamp + diff) // ex. 3\uC6D4 6\uC77C 30\uCD08 - (3\uC6D4 1\uC77C + 5\uC77C)\\r\\n               
+    let elapsedTime = curClientTimestamp - (this.gameStartTimestampFromServer + this.diffTimestamp);\\r\\n               
+    // \uBE14\uB85D\uC5D0 \uC804\uB2EC\uD558\uAE30 \uC704\uD574 \uCD08 \uB2E8\uC704\uB85C
+    \uBCC0\uACBD  \\r\\n                let timestampSecond = elapsedTime / 1000;\\r\\n               
+    // \uAC01 \uBE14\uB85D\uC5D0 \uD604\uC7AC \uB8F8\uC5D0\uC11C \uD750\uB978 \uC2DC\uAC04\uC744
+    \uC804\uB2EC\uD569\uB2C8\uB2E4.\\r\\n                for (let i = 0; i < this.movingBlockScripts.length;
+    i++) {\\r\\n                    this.movingBlockScripts[i].InitMultiplayMode(timestampSecond);\\r\\n               
+    }\\r\\n                // \uAC01 \uBE14\uB85D\uC5D0 \uD604\uC7AC \uB8F8\uC5D0\uC11C
+    \uD750\uB978 \uC2DC\uAC04\uC744 \uC804\uB2EC\uD569\uB2C8\uB2E4.\\r\\n               
+    for (let i = 0; i < this.orbitingBlockScripts.length; i++) {\\r\\n                   
+    this.orbitingBlockScripts[i].InitMultiplayMode(timestampSecond);\\r\\n               
+    }\\r\\n            }\\r\\n        }\\r\\n    }\\r\\n    /* AddMessageHandlersForBlockSync()\\r\\n      
+    - \uBE14\uB85D \uC704\uCE58 \uB3D9\uAE30\uD654\uB97C \uC704\uD55C \uBA54\uC2DC\uC9C0
+    \uD578\uB4E4\uB7EC\uC785\uB2C8\uB2E4.\\r\\n    */\\r\\n    AddMessageHandlersForBlockSync()
+    {\\r\\n        // \uCC98\uC74C \uC11C\uBC84\uC5D0 Join \uC2DC \uAC8C\uC784\uC2DC\uC791
+    timestamp\uC640 \uD50C\uB808\uC774\uC5B4 \uC811\uC18D\uC2DC\uC810 timestamp\uB97C
+    \uC804\uB2EC \uBC1B\uC2B5\uB2C8\uB2E4.\\r\\n        this.room.AddMessageHandler(this.MESSAGE_TYPE_ServerTimestamp,
+    (message) => {\\r\\n            let timestampInfo = {\\r\\n                gameStartTimestamp:
+    message.gameStartTimestamp,\\r\\n                playerJoinTimestamp: message.playerJoinTimestamp\\r\\n           
+    };\\r\\n            // \uC11C\uBC84\uC5D0\uC11C\uC758 \uAC8C\uC784\uC2DC\uC791
+    \uC2DC\uC810 timestamp \uCE90\uC2F1\\r\\n            this.gameStartTimestampFromServer
+    = Number(timestampInfo.gameStartTimestamp);\\r\\n            // \uC11C\uBC84\uC5D0\uC11C\uC758
+    \uD50C\uB808\uC774\uC5B4\uC758 Join \uC2DC\uC810 timestamp\\r\\n            let
+    playerJoinTimestampFromServer = Number(timestampInfo.playerJoinTimestamp);\\r\\n           
+    // \uD604\uC7AC \uD074\uB77C\uC774\uC5B8\uD2B8 \uC2DC\uAC04\\r\\n           
+    let curClientTimeStamp = +new Date();\\r\\n            // \uC11C\uBC84\uC5D0\uC11C\uC758
+    timestamp\uC640 \uD074\uB77C\uC774\uC5B8\uD2B8\uC5D0\uC11C\uC758 timestamp\uC758
+    \uCC28\uC774\uB97C \uC800\uC7A5\\r\\n            // - \uBC31\uADF8\uB77C\uC6B4\uB4DC\uC5D0\uC11C
+    \uB3CC\uC544\uC640\uC11C \uBE14\uB85D \uC704\uCE58 \uC7AC\uC870\uC815 \uC2DC
+    \uCC28\uC774\uAC12 \uBCF4\uC815\uC744 \uC704\uD568 \\r\\n            let diff
+    = curClientTimeStamp - playerJoinTimestampFromServer;\\r\\n            this.diffTimestamp
+    = diff; // \uCC28\uC774\uAC12 \uC800\uC7A5\\r\\n            // \uAC8C\uC784 \uC2DC\uC791
+    \uD6C4 \uD750\uB978 \uC2DC\uAC04\\r\\n            let elapsedTime = playerJoinTimestampFromServer
+    - this.gameStartTimestampFromServer;\\r\\n            // \uBE14\uB85D \uACC4\uC0B0\uC744
+    \uC704\uD574 \uCD08 \uB2E8\uC704\uB85C \uBCC0\uACBD\\r\\n            let timestampSecond
+    = elapsedTime / 1000;\\r\\n            // \uAC01 \uBE14\uB85D\uC5D0 \uD750\uB978
+    \uC2DC\uAC04 \uC804\uB2EC\\r\\n            for (let i = 0; i < this.movingBlockScripts.length;
+    i++) {\\r\\n                this.movingBlockScripts[i].InitMultiplayMode(timestampSecond);\\r\\n           
+    }\\r\\n            for (let i = 0; i < this.orbitingBlockScripts.length; i++)
+    {\\r\\n                this.orbitingBlockScripts[i].InitMultiplayMode(timestampSecond);\\r\\n           
+    }\\r\\n        });\\r\\n    }\\r\\n    /* AddMessageHandlersForCharacterSync()\\r\\n      
+    - \uCE90\uB9AD\uD130 \uC704\uCE58 \uB3D9\uAE30\uD654\uB97C \uC704\uD55C \uBA54\uC2DC\uC9C0
+    \uD578\uB4E4\uB7EC\uC785\uB2C8\uB2E4.\\r\\n       MESSAGE_TYPE_OnPlatformState
+    : \uCE90\uB9AD\uD130\uAC00 \uD50C\uB7AB\uD3FC\uC5D0 \uC62C\uB77C\uAC04 \uACBD\uC6B0\\r\\n      
+    MESSAGE_TYPE_OnTryJumpForMovingToBlock : \uCE90\uB9AD\uD130\uAC00 \uD50C\uB7AB\uD3FC\uC5D0\uC11C
+    \uBE14\uB85D\uC73C\uB85C \uC774\uB3D9\uC744 \uC2DC\uB3C4\uD55C \uACBD\uC6B0\\r\\n      
+    MESSAGE_TYPE_OnCharacterLandedBlock : \uCE90\uB9AD\uD130\uAC00 \uBB34\uBE59\uBE14\uB85D\uC5D0
+    \uCC29\uC9C0\uD55C \uACBD\uC6B0 (\uC0C1\uB300\uC801 \uC704\uCE58 \uAC12 \uC804\uB2EC
+    \uBC1B\uC74C)\\r\\n       MESSAGE_TYPE_OnCharacterJumpOnBlock : \uCE90\uB9AD\uD130\uAC00
+    \uBE14\uB85D\uC704\uC5D0\uC11C \uC810\uD504\uB97C \uD55C \uACBD\uC6B0\\r\\n      
+    MESSAGE_TYPE_OnFallTriggerEnter : \uCE90\uB9AD\uD130\uAC00 \uB5A8\uC5B4\uC838
+    FallTrigger\uC5D0 \uB2FF\uC740 \uACBD\uC6B0\\r\\n       MESSAGE_TYPE_OnLeavePlayer
+    : \uCE90\uB9AD\uD130\uAC00 \uB8F8\uC5D0\uC11C \uB098\uAC00\uB294 \uACBD\uC6B0\\r\\n   
+    */\\r\\n    AddMessageHandlersForCharacterSync() {\\r\\n        // \uCE90\uB9AD\uD130\uAC00
+    \uBB34\uBE59\uBE14\uB85D\uC5D0\uC11C \uB0B4\uB824\uC624\uACE0 \uD50C\uB7AB\uD3FC\uC5D0
+    \uC62C\uB77C\uAC14\uC744 \uB54C \uC6B4\uBC18\uC6A9 \uBD80\uBAA8\uB97C \uD574\uC81C\uD558\uACE0
+    \uC6D0\uB798 \uBD80\uBAA8\uB85C \uC124\uC815\uD569\uB2C8\uB2E4.\\r\\n       
+    this.room.AddMessageHandler(this.MESSAGE_TYPE_OnPlatformState, (message) => {\\r\\n           
+    // \uAE30\uC874 \uB3D9\uAE30\uD654 \uB85C\uC9C1 \uC2E4\uD589\uC744 \uC704\uD574
+    context\uB97C \uC6D0\uB798 \uBD80\uBAA8\uB85C \uB3CC\uB824\uB194\uC90C\\r\\n           
+    const sessionId = message.toString();\\r\\n            if (false == this.characterContexts.has(sessionId))
+    {\\r\\n                return;\\r\\n            }\\r\\n            this.ResetOriginParent(sessionId);\\r\\n           
+    this.ResetJumpToBlockSetting(sessionId);\\r\\n        });\\r\\n        // \uCE90\uB9AD\uD130\uAC00
+    \uD50C\uB7AB\uD3FC\uC5D0\uC11C \uBB34\uBE59\uBE14\uB85D\uC5D0 \uC62C\uB77C\uAC00\uB824\uACE0
+    \uC2DC\uB3C4\uD560 \uB54C \uBA54\uC2DC\uC9C0\uB97C \uC804\uB2EC \uBC1B\uC2B5\uB2C8\uB2E4.\\r\\n       
+    this.room.AddMessageHandler(this.MESSAGE_TYPE_OnTryJumpForMovingToBlock, (message)
+    => {\\r\\n            const relativeVector = new UnityEngine_1.Vector3(message.posX,
+    message.posY, message.posZ);\\r\\n            const platformPosition = new UnityEngine_1.Vector3(message.relativeX,
+    message.relativeY, message.relativeZ);\\r\\n            const sessionId = message.sessionId;\\r\\n           
+    this.SetCarrierParentAndZepetoContext(sessionId);\\r\\n            //\uD50C\uB7AB\uD3FC\uC5D0\uC11C
+    \uBB34\uBE59\uBE14\uB85D\uC5D0 \uC62C\uB77C\uAC00\uB294 \uACBD\uC6B0 \uC778\uB371\uC2A4\uB294
+    -1\uC744 \uBCF4\uB0B4\uACE0 \uD574\uB2F9 \uACBD\uC6B0\uC5D0\uB9CC \uC810\uD504
+    \uC2DC \uD50C\uB7AB\uD3FC\uC5D0\uC11C \uC810\uD504\uD55C \uC704\uCE58\uB97C \uC804\uB2EC\uD574\uC11C
+    \uBCF4\uB0C5\uB2C8\uB2E4.\\r\\n            this.SetJumpToBlockSetting(sessionId,
+    -1, relativeVector, this.FIRSTBLOCK, platformPosition);\\r\\n        });\\r\\n       
+    // \uCE90\uB9AD\uD130\uAC00 \uBE14\uB85D\uC5D0 \uCC29\uC9C0\uD588\uC744 \uB54C
+    \uC0C1\uB300\uC801 \uC704\uCE58 \uBCA1\uD130\uB97C \uBA54\uC2DC\uC9C0\uB85C \uC804\uB2EC
+    \uBC1B\uC2B5\uB2C8\uB2E4.        \\r\\n        this.room.AddMessageHandler(this.MESSAGE_TYPE_OnCharacterLandedBlock,
+    (message) => {\\r\\n            // \uD574\uB2F9 \uCE90\uB9AD\uD130\uB97C \uBE14\uB85D
+    \uC704\uB85C \uD154\uB808\uD3EC\uD2B8\\r\\n            this.TeleportCharacterOnBlock(message);\\r\\n       
+    });\\r\\n        // \uCE90\uB9AD\uD130\uAC00 \uBE14\uB85D\uC5D0\uC11C \uC810\uD504\uD588\uC744
+    \uB54C \uC0C1\uB300\uC801 \uC704\uCE58 \uBCA1\uD130\uB97C \uBA54\uC2DC\uC9C0\uB85C
+    \uC804\uB2EC \uBC1B\uC2B5\uB2C8\uB2E4.\\r\\n        this.room.AddMessageHandler(this.MESSAGE_TYPE_OnCharacterJumpOnBlock,
+    (message) => {\\r\\n            this.OnBlockTriggerExit(message);\\r\\n       
+    });\\r\\n        // \uCE90\uB9AD\uD130\uAC00 \uB5A8\uC5B4\uC9C4 \uACBD\uC6B0
+    \uBA54\uC2DC\uC9C0\uB97C \uC804\uB2EC \uBC1B\uC2B5\uB2C8\uB2E4.\\r\\n       
+    this.room.AddMessageHandler(this.MESSAGE_TYPE_OnFallTriggerEnter, (message) =>
+    {\\r\\n            const sessionId = message.toString();\\r\\n            this.ResetJumpToBlockSetting(sessionId);\\r\\n           
+    // \uD574\uB2F9 \uCE90\uB9AD\uD130\uB97C \uB9AC\uC2A4\uD3F0\\r\\n           
+    if (this.carrierParents.has(sessionId)) {\\r\\n                this.StartCoroutine(this.RespwanCharacter(sessionId));\\r\\n           
+    }\\r\\n        });\\r\\n        // \uCE90\uB9AD\uD130\uAC00 \uB098\uAC00\uB294
+    \uC2DC\uC810\uC5D0 \uBA54\uC2DC\uC9C0\uB97C \uC804\uB2EC\uBC1B\uC2B5\uB2C8\uB2E4.\\r\\n       
+    this.room.AddMessageHandler(this.MESSAGE_TYPE_OnLeavePlayer, (message) => {\\r\\n           
+    const sessionId = message.toString();\\r\\n            // \uC0AC\uC6A9\uD588\uB358
+    \uC778\uC2A4\uD134\uC2A4\uB4E4 \uC0AD\uC81C\\r\\n            if (this.carrierParents.has(sessionId))
+    {\\r\\n                this.carrierParents.delete(sessionId);\\r\\n           
+    }\\r\\n            if (this.characterContexts.has(sessionId)) {\\r\\n               
+    this.characterContexts.delete(sessionId);\\r\\n            }\\r\\n           
+    if (this.originCharacterParents.has(sessionId)) {\\r\\n                this.originCharacterParents.delete(sessionId);\\r\\n           
+    }\\r\\n        });\\r\\n    }\\r\\n    /*\\r\\n        \uCE90\uB9AD\uD130\uAC00
+    \uB5A8\uC5B4\uC9C4 \uACBD\uC6B0 \uB9AC\uC2A4\uD3F0 \uD3EC\uC778\uD2B8\uB85C \uC774\uB3D9
+    \uC2DC\uD0B5\uB2C8\uB2E4.\\r\\n    */\\r\\n    *RespwanCharacter(sessionId) {\\r\\n       
+    const carrierParent = this.carrierParents.get(sessionId);\\r\\n        while
+    (UnityEngine_1.Vector3.op_Inequality(carrierParent.transform.position, this.respawnPoint.position))
+    {\\r\\n            carrierParent.transform.position = this.respawnPoint.position;\\r\\n           
+    yield null;\\r\\n        }\\r\\n    }\\r\\n    // ------------------------ \uC11C\uBC84\uB85C
+    \uBA54\uC2DC\uC9C0\uB97C \uC804\uC1A1\uD558\uAE30 \uC704\uD55C \uD568\uC218\uB4E4
+    ------------------------\\r\\n    /* SendOnTryJumpForMovingToBlock()\\r\\n      
+    - \uCE90\uB9AD\uD130\uAC00 \uD50C\uB7AB\uD3FC\uC5D0\uC11C \uBB34\uBE59\uBE14\uB85D\uC5D0
+    \uC62C\uB77C\uAC00\uB824\uACE0 \uC2DC\uB3C4\uD560 \uB54C \uBA54\uC2DC\uC9C0\uB97C
+    \uC804\uC1A1\uD569\uB2C8\uB2E4.\\r\\n    */\\r\\n    SendOnTryJumpForMovingToBlock(position,
+    platformPosition) {\\r\\n        const data = new ZEPETO_Multiplay_1.RoomData();\\r\\n       
+    const relativePos = new ZEPETO_Multiplay_1.RoomData();\\r\\n        const platformPos
+    = new ZEPETO_Multiplay_1.RoomData();\\r\\n        relativePos.Add(\\\"x\\\",
+    position.x);\\r\\n        relativePos.Add(\\\"y\\\", position.y);\\r\\n       
+    relativePos.Add(\\\"z\\\", position.z);\\r\\n        data.Add(\\\"relativePos\\\",
+    relativePos.GetObject());\\r\\n        platformPos.Add(\\\"x\\\", platformPosition.x);\\r\\n       
+    platformPos.Add(\\\"y\\\", platformPosition.y);\\r\\n        platformPos.Add(\\\"z\\\",
+    platformPosition.z);\\r\\n        data.Add(\\\"platformPos\\\", platformPos.GetObject());\\r\\n       
+    this.room.Send(this.MESSAGE_TYPE_OnTryJumpForMovingToBlock, data.GetObject());\\r\\n   
+    }\\r\\n    /* SendOnBlockTriggerEnter()\\r\\n       - \uD50C\uB808\uC774\uC5B4\uAC00
+    \uBB34\uBE59\uBE14\uB85D \uD2B8\uB9AC\uAC70\uC5D0 \uB4E4\uC5B4\uAC04 \uC21C\uAC04
+    \uC11C\uBC84\uB85C \uBA54\uC2DC\uC9C0\uB97C \uC804\uC1A1\uD569\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    SendOnBlockTriggerEnter(blockIdx) {\\r\\n        this.room.Send(this.MESSAGE_TYPE_OnBlockTriggerEnter,
+    blockIdx);\\r\\n    }\\r\\n    /* SendOnBlockTriggerExit()\\r\\n       - \uD50C\uB808\uC774\uC5B4\uAC00
+    \uBB34\uBE59\uBE14\uB85D \uD2B8\uB9AC\uAC70\uC5D0\uC11C \uB098\uC624\uB294 \uC21C\uAC04\uC758
+    \uC0C1\uB300\uC801 \uC704\uCE58 \uBCA1\uD130\uB97C \uC804\uC1A1\uD569\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    SendOnBlockTriggerExit(blockIdx, relativePosition) {\\r\\n       
+    const data = new ZEPETO_Multiplay_1.RoomData();\\r\\n        data.Add(\\\"blockIdx\\\",
+    blockIdx);\\r\\n        const relativePos = new ZEPETO_Multiplay_1.RoomData();\\r\\n       
+    relativePos.Add(\\\"x\\\", relativePosition.x);\\r\\n        relativePos.Add(\\\"y\\\",
+    relativePosition.y);\\r\\n        relativePos.Add(\\\"z\\\", relativePosition.z);\\r\\n       
+    data.Add(\\\"relativePos\\\", relativePos.GetObject());\\r\\n        this.room.Send(this.MESSAGE_TYPE_OnCharacterJumpOnBlock,
+    data.GetObject());\\r\\n    }\\r\\n    /* SendOnLandedBlock()\\r\\n       - \uB85C\uCEEC
+    \uCE90\uB9AD\uD130\uAC00 \uBE14\uB85D \uC704\uC5D0 \uCC29\uC9C0\uD588\uC744 \uB54C
+    \uC11C\uBC84\uB85C \uC0C1\uB300\uC801 \uC704\uCE58 \uBCA1\uD130\uB97C \uC804\uC1A1\uD569\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    SendOnLandedBlock(blockIdx, relativeVector) {\\r\\n        const
+    data = new ZEPETO_Multiplay_1.RoomData();\\r\\n        data.Add(\\\"blockIdx\\\",
+    blockIdx);\\r\\n        const relativePos = new ZEPETO_Multiplay_1.RoomData();\\r\\n       
+    relativePos.Add(\\\"x\\\", relativeVector.x);\\r\\n        relativePos.Add(\\\"y\\\",
+    relativeVector.y);\\r\\n        relativePos.Add(\\\"z\\\", relativeVector.z);\\r\\n       
+    data.Add(\\\"relativePos\\\", relativePos.GetObject());\\r\\n        this.room.Send(this.MESSAGE_TYPE_OnCharacterLandedBlock,
+    data.GetObject());\\r\\n    }\\r\\n    /* SendOnPlatformState()\\r\\n       -
+    \uB85C\uCEEC \uCE90\uB9AD\uD130\uAC00 \uD50C\uB7AB\uD3FC \uC704\uC5D0 \uCC29\uC9C0\uD588\uC744
+    \uB54C \uC11C\uBC84\uB85C \uC0C1\uB300\uC801 \uC704\uCE58 \uBCA1\uD130\uB97C
+    \uC804\uC1A1\uD569\uB2C8\uB2E4.\\r\\n    */\\r\\n    SendOnPlatformState() {\\r\\n       
+    this.room.Send(this.MESSAGE_TYPE_OnPlatformState);\\r\\n    }\\r\\n    /* SendOnFallTriggerEnter()\\r\\n      
+    - \uB85C\uCEEC \uCE90\uB9AD\uD130\uAC00 \uBE14\uB85D \uC544\uB798\uB85C \uB5A8\uC5B4\uC84C\uC744
+    \uB54C \uC11C\uBC84\uB85C \uBA54\uC2DC\uC9C0\uB97C \uC804\uC1A1\uD569\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    SendOnFallTriggerEnter() {\\r\\n        this.room.Send(this.MESSAGE_TYPE_OnFallTriggerEnter);\\r\\n   
+    }\\r\\n    /* SendTryJump()\\r\\n       - \uB85C\uCEEC \uCE90\uB9AD\uD130\uAC00
+    \uBE14\uB85D \uC704\uC5D0\uC11C \uC810\uD504\uB97C \uC2DC\uB3C4\uD588\uC744 \uB54C
+    \uBA54\uC2DC\uC9C0\uB97C \uC804\uC1A1\uD569\uB2C8\uB2E4.\\r\\n    */\\r\\n   
+    SendTryJump(isJumping) {\\r\\n        this.room.Send(this.MESSAGE_TYPE_OnTryJump,
+    isJumping);\\r\\n    }\\r\\n    /* CheckPlayerOnBlock()\\r\\n       - \uB8F8\uC5D0
+    \uBA3C\uC800 \uB4E4\uC5B4\uC640 \uC788\uB358 \uCE90\uB9AD\uD130\uAC00 \uBE14\uB85D
+    \uC704\uC5D0 \uC788\uB2E4\uBA74 \uAD00\uB828 \uC124\uC815\uB4E4\uC744 \uC9C4\uD589\uD569\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    CheckPlayerOnBlock(sessionId) {\\r\\n        let player = this.room.State.players.get_Item(sessionId);\\r\\n       
+    let serverBlockIndex = player.blockIndex;\\r\\n        if (player.isOnBlock)
+    {\\r\\n            // Moving Block\uC778 \uACBD\uC6B0\\r\\n            if (this.IsMovingBlock(serverBlockIndex))
+    {\\r\\n                // \uD574\uB2F9 \uBE14\uB85D\uC758 \uC6B4\uBC18 \uB300\uC0C1\uC5D0
+    \uD574\uB2F9 \uCE90\uB9AD\uD130\uAC00 \uC788\uB294\uC9C0 \uD655\uC778 \\r\\n               
+    if (false == this.movingBlockScripts[serverBlockIndex].HasPlayerInCarrierPool(sessionId))
+    {\\r\\n                    // \uC5C6\uB2E4\uBA74 \uC6B4\uBC18\uC6A9 \uBD80\uBAA8
+    \uC0DD\uC131 \uBC0F \uC124\uC815\\r\\n                    this.SetCarrierParentAndZepetoContext(sessionId);\\r\\n                   
+    let relativeVector = UnityEngine_1.Vector3.zero;\\r\\n                    let
+    carrierParent = this.carrierParents.get(sessionId).transform;\\r\\n                   
+    // \uD574\uB2F9 \uBE14\uB85D\uC758 \uC6B4\uBC18 \uB300\uC0C1\uC73C\uB85C \uB4F1\uB85D\\r\\n                   
+    this.movingBlockScripts[serverBlockIndex].AddCharacterOnBlock(sessionId, relativeVector,
+    carrierParent);\\r\\n                }\\r\\n            }\\r\\n            //
+    OrbitingBlock\uC778 \uACBD\uC6B0\\r\\n            else {\\r\\n               
+    let newIndex = this.GetBlockIndex(serverBlockIndex);\\r\\n                //
+    \uD574\uB2F9 \uBE14\uB85D\uC758 \uC6B4\uBC18 \uB300\uC0C1\uC5D0 \uD574\uB2F9
+    \uCE90\uB9AD\uD130\uAC00 \uC788\uB294\uC9C0 \uD655\uC778 \\r\\n               
+    if (false == this.orbitingBlockScripts[newIndex].HasPlayerInCarrierPool(sessionId))
+    {\\r\\n                    // \uC5C6\uB2E4\uBA74 \uC6B4\uBC18\uC6A9 \uBD80\uBAA8
+    \uC0DD\uC131 \uBC0F \uC124\uC815\\r\\n                    this.SetCarrierParentAndZepetoContext(sessionId);\\r\\n                   
+    let relativeVector = UnityEngine_1.Vector3.zero;\\r\\n                    let
+    carrierParent = this.carrierParents.get(sessionId).transform;\\r\\n                   
+    // \uD574\uB2F9 \uBE14\uB85D\uC758 \uC6B4\uBC18 \uB300\uC0C1\uC73C\uB85C \uB4F1\uB85D\\r\\n                   
+    this.orbitingBlockScripts[newIndex].AddCharacterOnBlock(sessionId, relativeVector,
+    carrierParent);\\r\\n                }\\r\\n            }\\r\\n        }\\r\\n   
+    }\\r\\n    /* ResetOriginParent()\\r\\n       - \uC6B4\uBC18\uC6A9 \uBD80\uBAA8\uC5D0\uC11C
+    \uC6D0\uB798\uC758 Zepeto Character \uBD80\uBAA8\uB85C \uB3CC\uB824\uB193\uC2B5\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    ResetOriginParent(sessionId) {\\r\\n        const context = this.characterContexts.get(sessionId);\\r\\n       
+    const originParent = this.originCharacterParents.get(sessionId);\\r\\n       
+    const character = ZEPETO_Character_Controller_1.ZepetoPlayers.instance.GetPlayer(sessionId).character;\\r\\n       
+    originParent.transform.position = this.carrierParents.get(sessionId).transform.position;\\r\\n       
+    originParent.transform.rotation = this.carrierParents.get(sessionId).transform.rotation;\\r\\n       
+    context.transform.SetParent(originParent.transform);\\r\\n        context.transform.localPosition
+    = UnityEngine_1.Vector3.zero;\\r\\n        context.transform.localEulerAngles
+    = UnityEngine_1.Vector3.zero;\\r\\n        originParent.SetActive(true);\\r\\n       
+    /**\\r\\n         * carrierParent\uC5D0\uC11C originParent\uB85C \uBCC0\uACBD\uD558\uB294
+    \uC21C\uAC04 \uC785\uB825\uC774 \uC5C6\uB2E4\uBA74 \uAE30\uC874 state\uAC00 \uC2E4\uD589\uB418\uC5B4
+    JumpMove,Run \uB4F1\uC758 state\uC5D0\uC11C \uCE90\uB9AD\uD130\uAC00 \uD50C\uB7AB\uD3FC\uC5D0
+    \uB79C\uB529\uD55C \uB4A4 \uB6F0\uC5B4 \uB098\uAC00\uB294 \uC774\uC288\uAC00
+    \uC788\uC74C\\r\\n         * TODO : \uAC15\uC81C\uB85C state\uB97C \uBCC0\uACBD\uD558\uAE30
+    \uC704\uD574 \uC784\uC758\uC758 \uC81C\uC2A4\uCC98\uB97C \uC2E4\uD589\uD558\uACE0
+    \uC77C\uC815 \uC2DC\uAC04 \uD6C4 \uC81C\uC2A4\uCC98\uB97C \uCDE8\uC18C\uD558\uB294
+    \uB85C\uC9C1\uC774\uC9C0\uB9CC \uD574\uB2F9 \uB85C\uC9C1\uB3C4 0.2\uCD08 \uC774\uD6C4\uC774
+    \uC785\uB825\uC5C6\uC73C\uBA74 \uC704 \uC0C1\uD669\uACFC \uB3D9\uC77C\uD558\uC5EC
+    \uC774\uD6C4 State \uCD08\uAE30\uD654\uAC00 \uAC00\uB2A5\uD558\uBA74 \uD574\uB2F9
+    \uCF54\uB4DC \uC218\uC815 \uC608\uC815\\r\\n         * */\\r\\n        if (character.CurrentState
+    == ZEPETO_Character_Controller_1.CharacterState.JumpMove || character.CurrentState
+    == ZEPETO_Character_Controller_1.CharacterState.Run)\\r\\n            this.StartCoroutine(this.CancelGestureCorutine(sessionId));\\r\\n   
+    }\\r\\n    *CancelGestureCorutine(sessionId) {\\r\\n        const character =
+    ZEPETO_Character_Controller_1.ZepetoPlayers.instance.GetPlayer(sessionId).character;\\r\\n       
+    character.SetGesture(this.gesture);\\r\\n        yield new UnityEngine_1.WaitForSeconds(0.2);\\r\\n       
+    while (character.CurrentState == ZEPETO_Character_Controller_1.CharacterState.Gesture)
+    {\\r\\n            character.CancelGesture();\\r\\n            yield null;\\r\\n       
+    }\\r\\n    }\\r\\n    /* SetCarrierParentAndZepetoContext()\\r\\n       - \uBE14\uB85D
+    \uAC04 \uC774\uB3D9\uC744 \uC704\uD574 \uAE30\uC874 \uCE90\uB9AD\uD130 \uBC11\uC5D0
+    \uC788\uB358 Zepeto Context\uB97C \uAC00\uC838\uC640 \uC6B4\uBC18\uC6A9 \uBD80\uBAA8\uC5D0
+    \uBD99\uC5EC\uC90D\uB2C8\uB2E4.\\r\\n    */\\r\\n    SetCarrierParentAndZepetoContext(sessionId)
+    {\\r\\n        // \uC6B4\uBC18\uC6A9 \uBD80\uBAA8\uAC00 \uC5C6\uB2E4\uBA74 \uC0DD\uC131\\r\\n       
+    if (false == this.carrierParents.has(sessionId)) {\\r\\n            var obj =
+    UnityEngine_1.GameObject.Instantiate(this.carrierParentPrefab);\\r\\n           
+    obj.GetComponent($typeof(CarrierParentController_1.default)).SetSessionId(sessionId);\\r\\n           
+    obj.name = `CarrierParent_${sessionId}`;\\r\\n            this.carrierParents.set(sessionId,
+    obj);\\r\\n        }\\r\\n        // \uC911\uB825 \uC124\uC815 \uCD08\uAE30\uD654\\r\\n       
+    this.carrierParents.get(sessionId).GetComponent($typeof(UnityEngine_1.Rigidbody)).useGravity
+    = false;\\r\\n        // \uC788\uB2E4\uBA74 \uC6B4\uBC18\uC6A9 \uBD80\uBAA8\uB97C
+    \uAC00\uC838\uC634 \\r\\n        let carrierParent = this.carrierParents.get(sessionId);\\r\\n       
+    const character = ZEPETO_Character_Controller_1.ZepetoPlayers.instance.GetPlayer(sessionId).character;\\r\\n       
+    // carrierParent\uAC00 \uC5C9\uB6B1\uD55C \uC704\uCE58\uC5D0 \uC788\uB294 \uACBD\uC6B0\uAC00
+    \uC788\uC5B4 \uAE30\uC874 \uCE90\uB9AD\uD130 \uC704\uCE58\uB85C \uC124\uC815
+    \\r\\n        carrierParent.transform.position = character.transform.position;\\r\\n       
+    carrierParent.transform.rotation = character.transform.rotation;\\r\\n       
+    // context \uCD94\uCD9C \uD6C4 \uB098\uC911\uC5D0 \uB2E4\uC2DC \uB3CC\uB824\uB193\uAE30
+    \uC704\uD574 Map\uC5D0 \uC800\uC7A5 \\r\\n        const context = character.Context.gameObject;\\r\\n       
+    this.characterContexts.set(sessionId, context);\\r\\n        // context\uC5D0
+    \uC0C8\uB85C\uC6B4 \uC6B4\uBC18\uC6A9 \uBD80\uBAA8\uB97C \uC124\uC815 \uBC0F
+    \uC575\uAE00, \uD3EC\uC9C0\uC158 \uCD08\uAE30\uD654\\r\\n        context.transform.SetParent(carrierParent.transform);\\r\\n       
+    context.transform.localEulerAngles = UnityEngine_1.Vector3.zero;\\r\\n       
+    context.transform.localPosition = UnityEngine_1.Vector3.zero;\\r\\n        //
+    \uC6D0\uB798 \uBD80\uBAA8\uB294 \uB098\uC911\uC5D0 \uB2E4\uC2DC \uC0AC\uC6A9\uD558\uAE30
+    \uC704\uD574 Map\uC5D0 \uC800\uC7A5\\r\\n        this.originCharacterParents.set(sessionId,
+    character.gameObject);\\r\\n        character.gameObject.SetActive(false); //
+    \uBE44\uD65C\uC131\uD654\\r\\n    }\\r\\n    /* GetBlockIndex()\\r\\n       -
+    Moving Block\uC778\uC9C0 Orbiting Block\uC778\uC9C0\uC5D0 \uB530\uB77C \uC778\uB371\uC2A4\uB97C
+    \uC870\uC815\uD558\uC5EC \uBC18\uD658\uD569\uB2C8\uB2E4.\\r\\n    */\\r\\n   
+    GetBlockIndex(idx) {\\r\\n        if (idx < this.movingBlocks.length) {\\r\\n           
+    return idx;\\r\\n        }\\r\\n        else {\\r\\n            return idx -
+    this.movingBlocks.length;\\r\\n        }\\r\\n    }\\r\\n    /* TeleportBlockRelativePosition()\\r\\n      
+    - \uB9AC\uBAA8\uD2B8 \uCE90\uB9AD\uD130\uB97C \uD2B9\uC815 \uBE14\uB85D\uC758
+    \uC0C1\uB300\uC801 \uC704\uCE58\uB85C \uC774\uB3D9\uC2DC\uD0A4\uACE0, \uD574\uB2F9
+    \uBE14\uB85D\uC758 \uC6B4\uBC18 \uB300\uC0C1\uC73C\uB85C \uB4F1\uB85D\uD569\uB2C8\uB2E4.\\r\\n        
+    \uC6B4\uBC18\uB300\uC0C1\uC5D0 \uB4F1\uB85D\uB41C \uB9AC\uBAA8\uD2B8 \uCE90\uB9AD\uD130\uB294
+    \uBB34\uBE59\uBE14\uB7ED\uACFC \uD568\uAED8 \uC6C0\uC9C1\uC785\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    TeleportCharacterOnBlock(message) {\\r\\n        const sessionId
+    = message.sessionId;\\r\\n        // \uC810\uD504 \uAD00\uB828 \uCC98\uB9AC \\r\\n       
+    if (this.carrierParents.has(sessionId)) {\\r\\n            const animator = ZEPETO_Character_Controller_1.ZepetoPlayers.instance.GetPlayer(sessionId).character.ZepetoAnimator;\\r\\n           
+    animator.runtimeAnimatorController = this.moveBlockAnimator;\\r\\n           
+    animator.enabled = true;\\r\\n            animator.SetBool(\\\"JumpMove\\\",
+    false);\\r\\n        }\\r\\n        // \uB79C\uB529 \uC0C1\uD0DC\uC77C\uB54C
+    \uAE30\uC874 \uC810\uD504 \uCF54\uB8E8\uD2F4 \uC815\uC9C0\\r\\n        this.StopJumpToBlockCoroutine(sessionId);\\r\\n       
+    const blockIdx = message.blockIndex;\\r\\n        const relativePos = new UnityEngine_1.Vector3(message.relativeX,
+    message.relativeY, message.relativeZ);\\r\\n        let carrierParent = this.carrierParents.get(sessionId);\\r\\n       
+    if (this.IsMovingBlock(blockIdx)) {\\r\\n            let blockIndex = this.GetBlockIndex(blockIdx);\\r\\n           
+    this.movingBlockScripts[blockIndex].AddCharacterOnBlock(sessionId, relativePos,
+    carrierParent.transform);\\r\\n        }\\r\\n        else {\\r\\n           
+    let blockIndex = this.GetBlockIndex(blockIdx);\\r\\n            this.orbitingBlockScripts[blockIndex].AddCharacterOnBlock(sessionId,
+    relativePos, carrierParent.transform);\\r\\n        }\\r\\n    }\\r\\n    /*
+    TeleportSameBlockRelativePosition()\\r\\n       - \uB9AC\uBAA8\uD2B8 \uCE90\uB9AD\uD130\uB97C
+    \uAC19\uC740 \uBE14\uB85D \uB0B4 \uC810\uD504 \uC704\uCE58\uB85C \uC774\uB3D9\uC2DC\uD0A4\uACE0,
+    \uD574\uB2F9 \uBE14\uB85D\uC758 \uC6B4\uBC18 \uB300\uC0C1\uC5D0\uC11C \uC0AD\uC81C\uD569\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    OnBlockTriggerExit(message) {\\r\\n        const sessionId = message.sessionId;\\r\\n       
+    const blockIdx = message.blockIndex;\\r\\n        const relativePos = new UnityEngine_1.Vector3(message.relativeX,
+    message.relativeY, message.relativeZ);\\r\\n        if (false == this.carrierParents.has(sessionId))\\r\\n           
+    return;\\r\\n        let carrierParent = this.carrierParents.get(sessionId);\\r\\n       
+    let blockIndex = this.GetBlockIndex(blockIdx);\\r\\n        if (this.IsMovingBlock(blockIdx))
+    {\\r\\n            this.movingBlockScripts[blockIndex].RemoveCharacterOnBlock(sessionId,
+    relativePos, carrierParent.transform);\\r\\n            this.SetJumpToBlockSetting(sessionId,
+    blockIndex, relativePos, this.MOVINGBLOCK);\\r\\n        }\\r\\n        else
+    {\\r\\n            this.orbitingBlockScripts[blockIndex].RemoveCharacterOnBlock(sessionId,
+    relativePos, carrierParent.transform);\\r\\n            this.SetJumpToBlockSetting(sessionId,
+    blockIndex, relativePos, this.ORBITINGBLOCK);\\r\\n        }\\r\\n    }\\r\\n   
+    /*IsMovingBlock()\\r\\n        -  \uBE14\uB7ED\uC758 \uC778\uB371\uC2A4\uB97C
+    \uD1B5\uD574 \uD604\uC7AC \uBE14\uB7ED\uC774 \uBB34\uBE59\uBE14\uB85D \uC778\uC9C0
+    \uC544\uB2CC\uC9C0\uB97C \uBC18\uD658\uD569\uB2C8\uB2E4.\\r\\n    */\\r\\n   
+    IsMovingBlock(blockIdx) {\\r\\n        if (blockIdx < this.movingBlocks.length)
+    {\\r\\n            return true;\\r\\n        }\\r\\n        else {\\r\\n           
+    return false;\\r\\n        }\\r\\n    }\\r\\n    /*MoveBlockToPlatform()\\r\\n       
+    - \uD50C\uB808\uC774\uC5B4\uAC00 \uCE90\uB9AC\uC5B4\uB97C \uAC00\uC9C0\uACE0
+    \uD50C\uB7AB\uD3FC\uC5D0 \uB4E4\uC5B4\uB294 \uC21C\uAC04\uC5D0 \uC6D0\uB798\uC758
+    Zepeto Character \uC124\uC815\uC73C\uB85C \uB3CC\uB824\uB193\uC2B5\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    MoveBlockToPlatform(sessionId) {\\r\\n        // \uAE30\uC874 \uB3D9\uAE30\uD654
+    \uB85C\uC9C1 \uC2E4\uD589\uC744 \uC704\uD574 context\uB97C \uC6D0\uB798 \uBD80\uBAA8\uB85C
+    \uB3CC\uB824\uB194\uC90C\\r\\n        if (false == this.characterContexts.has(sessionId))
+    {\\r\\n            return;\\r\\n        }\\r\\n        this.isLandingPlatform.set(sessionId,
+    true);\\r\\n        this.ResetJumpToBlockSetting(sessionId);\\r\\n        this.ResetOriginParent(sessionId);\\r\\n   
+    }\\r\\n    GetIsLandingPlatform(sessionId) {\\r\\n        return this.isLandingPlatform.get(sessionId);\\r\\n   
+    }\\r\\n    SetIsLandingPlatform(sessionId, isLandingPlatform) {\\r\\n       
+    this.isLandingPlatform.set(sessionId, isLandingPlatform);\\r\\n    }\\r\\n   
+    /* ResetJumpToBlockSetting()\\r\\n       - \uBB34\uBE59\uBE14\uB85D\uAC04 \uC6B4\uBC18\uC744
+    \uC704\uD574 \uC9C0\uC815\uB418\uC5C8\uB358 \uC560\uB2C8\uBA54\uC774\uD130\uC640
+    \uCF54\uB8E8\uD2F4\uC744 \uAE30\uC874 \uC0C1\uD0DC\uB85C \uB3CC\uB824\uB193\uC2B5\uB2C8\uB2E4.\\r\\n   
+    */\\r\\n    ResetJumpToBlockSetting(sessionId) {\\r\\n        const animator
+    = ZEPETO_Character_Controller_1.ZepetoPlayers.instance.GetPlayer(sessionId).character.ZepetoAnimator;\\r\\n       
+    animator.runtimeAnimatorController = ZEPETO_Character_Controller_1.ZepetoPlayers.instance.characterData.animatorController;\\r\\n       
+    this.playerTargetPosition.delete(sessionId);\\r\\n        this.isLanding.delete(sessionId);\\r\\n       
+    this.isLandingPlatform.delete(sessionId);\\r\\n        this.playerJumpDistances.delete(sessionId);\\r\\n       
+    this.playerFlightDuration.delete(sessionId);\\r\\n        this.StopJumpToBlockCoroutine(sessionId);\\r\\n   
+    }\\r\\n    SetJumpToBlockSetting(sessionId, blockIndex, relativeVector, blockFlag,
+    platformPosition) {\\r\\n        // blockPosition\uC740 \uCE90\uB9AD\uD130\uAC00
+    \uC11C \uC788\uB358 \uBE14\uB7ED\uC758 position \uC774\uACE0 startPosition\uC740
+    \uCE90\uB9AD\uD130\uAC00 \uC810\uD504\uD558\uBA74\uC11C \uB098\uAC04 triggerExit
+    \uC2DC\uC810\uC758 \uC704\uCE58\uC785\uB2C8\uB2E4. \\r\\n        var blockPosition
+    = UnityEngine_1.Vector3.zero;\\r\\n        var startPosition = UnityEngine_1.Vector3.zero;\\r\\n       
+    if (blockFlag == this.FIRSTBLOCK) { // \uD50C\uB7AB\uD3FC\uC5D0\uC11C \uBE14\uB85D\uC73C\uB85C
+    \uAC00\uB294 \uACBD\uC6B0\\r\\n            //\uD50C\uB7AB\uD3FC\uC5D0\uC11C \uB098\uAC00\uB294
+    \uACBD\uC6B0\uC5D0\uB294 platformPosition\uC744 \uBCF4\uB0B4 \uD604\uC7AC \uBE14\uB7ED\uC758
+    position\uC774 \uC544\uB2CC \uD50C\uB7AB\uD3FC\uC5D0\uC11C \uC810\uD504\uD55C
+    \uC704\uCE58\uB97C \uAC00\uC838\uC624\uACE0 \uC774\uBBF8 \uACC4\uC0B0\uD55C relativeVector\uB97C
+    \uAD6C\uD574\uC11C \uBCF4\uB0C5\uB2C8\uB2E4.\\r\\n            blockPosition =
+    platformPosition ? platformPosition : relativeVector;\\r\\n            startPosition
+    = this.carrierParents.get(sessionId).transform.position;\\r\\n        }\\r\\n       
+    else {\\r\\n            if (blockFlag == this.MOVINGBLOCK) {\\r\\n               
+    blockPosition = this.movingBlocks[blockIndex].transform.position;\\r\\n           
+    }\\r\\n            else {\\r\\n                blockPosition = this.orbitingBlocks[blockIndex].transform.position;\\r\\n           
+    }\\r\\n            startPosition = new UnityEngine_1.Vector3(blockPosition.x
+    - relativeVector.x, blockPosition.y - relativeVector.y, blockPosition.z - relativeVector.z);\\r\\n       
+    }\\r\\n        // \uC810\uD504 \uCF54\uB8E8\uD2F4 \uAD00\uB828 \uC14B\uD305\\r\\n       
+    this.isLanding.set(sessionId, false);\\r\\n        // \uCE90\uB9AD\uD130\uC758
+    \uC810\uD504 \uBC29\uD5A5 \uAD6C\uD558\uAE30 - startPositon \uACFC blockPosition
+    \uC0AC\uC774 \uBC29\uD5A5 \uBCA1\uD130\uB97C \uAD6C\uD569\uB2C8\uB2E4.\\r\\n       
+    var anglePos = (UnityEngine_1.Vector3.op_Subtraction(startPosition, blockPosition));\\r\\n       
+    // \uCE90\uB9AD\uD130\uC758 \uC810\uD504 \uBC29\uD5A5 \uAD6C\uD558\uAE30 - \uD50C\uB7AB\uD3FC\uC5D0\uC11C
+    \uBE14\uB85D\uC73C\uB85C \uAC00\uB294 \uACBD\uC6B0 \uC774\uBBF8 \uACC4\uC0B0\uB41C
+    relativeVector\uAC00 \uC804\uB2EC\uB429\uB2C8\uB2E4.\\r\\n        if (blockFlag
+    == this.FIRSTBLOCK)\\r\\n            anglePos = relativeVector;\\r\\n       
+    let angle = UnityEngine_1.Mathf.Atan2(anglePos.y, anglePos.x) * UnityEngine_1.Mathf.Rad2Deg;\\r\\n       
+    angle = anglePos.z > 0 ? angle : angle * -1;\\r\\n        // \uCE90\uB9AD\uD130\uAC00
+    \uC810\uD504\uD574\uC11C \uB098\uAC04 \uAC01\uB3C4\uC5D0 \uB530\uB77C \uACE0\uC815\uB41C
+    \uC810\uD504 \uAE38\uC774 \uAC12( playerJumpDistance : 3)\uB9CC\uD07C\uC758 \uC608\uC0C1
+    \uC810\uD504 \uC704\uCE58\uB97C \uACC4\uC0B0\uD569\uB2C8\uB2E4.\\r\\n       
+    let targetPosition = new UnityEngine_1.Vector3(startPosition.x + (UnityEngine_1.Mathf.Cos(angle
+    * UnityEngine_1.Mathf.Deg2Rad) * this.playerJumpDistance), blockPosition.y, startPosition.z
+    + (UnityEngine_1.Mathf.Sin(angle * UnityEngine_1.Mathf.Deg2Rad) * this.playerJumpDistance));\\r\\n       
+    // \uC810\uD504 \uC608\uCE21 \uC704\uCE58\uB294 \uCE90\uB9AD\uD130 \uB9C8\uB2E4
+    \uC800\uC7A5 \uB429\uB2C8\uB2E4.\\r\\n        this.playerTargetPosition.set(sessionId,
+    targetPosition);\\r\\n        // \uC810\uD504\uB97C \uC2DC\uC791\uD569\uB2C8\uB2E4.\\r\\n       
+    let jumpCoroutine = this.StartCoroutine(this.JumpToBlock(sessionId, startPosition,
+    45));\\r\\n        this.jumpCoroutines.set(sessionId, jumpCoroutine);\\r\\n       
+    if (blockIndex < 0)\\r\\n            return;\\r\\n        if (this.carrierParents.has(sessionId))
+    {\\r\\n            const animator = ZEPETO_Character_Controller_1.ZepetoPlayers.instance.GetPlayer(sessionId).character.ZepetoAnimator;\\r\\n           
+    animator.runtimeAnimatorController = this.moveBlockAnimator;\\r\\n           
+    animator.enabled = true;\\r\\n            animator.SetBool(\\\"JumpMove\\\",
+    true);\\r\\n        }\\r\\n    }\\r\\n    /**\\r\\n     * JumpToBlock()\\r\\n    
+    * \uCE90\uB9AD\uD130 \uC810\uD504\uC5D0 \uC4F0\uC774\uB294 \uD3EC\uBB3C\uC120
+    \uD568\uC218\\r\\n     * \uB6F0\uB294 \uCE90\uB9AD\uD130\uC640 \uD604\uC7AC \uC810\uD504
+    \uC2DC\uC791 \uC704\uCE58, \uC810\uD504 \uAC01\uB3C4\uB97C \uD30C\uB77C\uBBF8\uD130\uB85C
+    \uAC00\uC838\uC640 SetJumpToBlockSetting\uC5D0\uC11C \uC14B\uD305\uD55C TargetPosition\uAE4C\uC9C0
+    \uC810\uD504\uB97C \uC9C4\uD589\uD569\uB2C8\uB2E4.\\r\\n    */\\r\\n    *JumpToBlock(sessionId,
+    startPosition, angle) {\\r\\n        if (this.isLanding.get(sessionId))\\r\\n           
+    return;\\r\\n        if (false == this.carrierParents.has(sessionId))\\r\\n           
+    return;\\r\\n        //\uCE90\uB9AD\uD130\uAC00 \uC810\uD504 \uC2DC \uD3EC\uBB3C\uC120\uC73C\uB85C
+    \uC6C0\uC9C1\uC774\uAC8C \uD558\uAE30 \uC704\uD574\uC11C carrierParent\uC758
+    Transform\uC744 \uAC00\uC838\uC640 Translate\uD568\\r\\n        let characterTransform
+    = this.carrierParents.get(sessionId).transform;\\r\\n        let targetPosition
+    = this.playerTargetPosition.get(sessionId);\\r\\n        let distance = UnityEngine_1.Vector3.Distance(targetPosition,
+    startPosition);\\r\\n        let velocity = distance / (UnityEngine_1.Mathf.Sin(2
+    * angle * UnityEngine_1.Mathf.Deg2Rad) / ZEPETO_Character_Controller_1.ZepetoPlayers.gravity);\\r\\n       
+    let x = UnityEngine_1.Mathf.Sqrt(velocity) * UnityEngine_1.Mathf.Cos(angle *
+    UnityEngine_1.Mathf.Deg2Rad);\\r\\n        let y = UnityEngine_1.Mathf.Sqrt(velocity)
+    * UnityEngine_1.Mathf.Sin(angle * UnityEngine_1.Mathf.Deg2Rad);\\r\\n       
+    //\uCE90\uB9AD\uD130 \uC810\uD504 \uBC29\uD5A5\uC73C\uB85C \uCE90\uB9AD\uD130
+    \uD68C\uC804\uAC12 \uBCC0\uACBD\\r\\n        let rot = UnityEngine_1.Vector3.op_Subtraction(targetPosition,
+    startPosition);\\r\\n        characterTransform.rotation = UnityEngine_1.Quaternion.LookRotation(rot);\\r\\n       
+    characterTransform.rotation = new UnityEngine_1.Quaternion(0, characterTransform.rotation.y,
+    0, characterTransform.rotation.w);\\r\\n        let flightDuration = distance
+    / x;\\r\\n        let elapseTime = 0;\\r\\n        while (elapseTime < flightDuration)
+    {\\r\\n            characterTransform.Translate(0, (y - (ZEPETO_Character_Controller_1.ZepetoPlayers.gravity
+    * elapseTime)) * UnityEngine_1.Time.deltaTime, x * UnityEngine_1.Time.deltaTime);\\r\\n           
+    elapseTime += UnityEngine_1.Time.deltaTime;\\r\\n            yield null;\\r\\n       
+    }\\r\\n        //\uBE14\uB7ED\uC5D0\uC11C \uD50C\uB7AB\uD3FC\uC5D0 \uC810\uD504\uD558\uB294
+    \uACBD\uC6B0\uC5D0\uB9CC \uC2E4\uD589\\r\\n        if (this.isLandingPlatform.has(sessionId)
+    && this.isLandingPlatform.get(sessionId))\\r\\n            this.carrierParents.get(sessionId).GetComponent($typeof(UnityEngine_1.Rigidbody)).useGravity
+    = true;\\r\\n        if (this.jumpCoroutines.has(sessionId))\\r\\n           
+    this.jumpCoroutines.delete(sessionId);\\r\\n    }\\r\\n    StopJumpToBlockCoroutine(sessionId)
+    {\\r\\n        this.isLanding.set(sessionId, true);\\r\\n        if (this.jumpCoroutines.has(sessionId))
+    {\\r\\n            this.StopCoroutine(this.jumpCoroutines.get(sessionId));\\r\\n           
+    this.jumpCoroutines.delete(sessionId);\\r\\n        }\\r\\n        if (this.changeTargetPositionCoroutines.has(sessionId))
+    {\\r\\n            this.StopCoroutine(this.changeTargetPositionCoroutines.get(sessionId));\\r\\n           
+    this.changeTargetPositionCoroutines.delete(sessionId);\\r\\n        }\\r\\n   
+    }\\r\\n}\\r\\nexports.default = BlockMultiplay;\\r\\n//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiQmxvY2tNdWx0aXBsYXkuanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJCbG9ja011bHRpcGxheS50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOztBQUFBLDZDQUF3TDtBQUV4TCx1REFBa0Q7QUFDbEQsaURBQXFEO0FBR3JELDZFQUE0RTtBQUM1RSxtRUFBNEQ7QUFDNUQsdUVBQWdFO0FBQ2hFLHlEQUFrRDtBQUNsRCw2REFBc0Q7QUFxQ3RELE1BQXFCLGNBQWUsU0FBUSxxQ0FBcUI7SUFBakU7O1FBV0ksaUJBQWlCO1FBQ1QsYUFBUSxHQUFXLENBQUMsQ0FBQztRQUlyQiwyQkFBc0IsR0FBNEIsSUFBSSxHQUFHLEVBQXNCLENBQUM7UUFDaEYsc0JBQWlCLEdBQTRCLElBQUksR0FBRyxFQUFzQixDQUFDO1FBQzNFLG1CQUFjLEdBQTRCLElBQUksR0FBRyxFQUFzQixDQUFDO1FBRWhGLGlCQUFpQjtRQUNULGlDQUE0QixHQUFXLENBQUMsQ0FBQztRQUN6QyxrQkFBYSxHQUFXLENBQUMsQ0FBQztRQUtsQyx1Q0FBdUM7UUFDL0IsWUFBTyxHQUFZLEtBQUssQ0FBQztRQUl6QixjQUFTLEdBQXlCLElBQUksR0FBRyxFQUFtQixDQUFDO1FBQzdELHlCQUFvQixHQUF5QixJQUFJLEdBQUcsRUFBbUIsQ0FBQztRQUN4RSxtQkFBYyxHQUEyQixJQUFJLEdBQUcsRUFBcUIsQ0FBQztRQUN0RSxtQ0FBOEIsR0FBMkIsSUFBSSxHQUFHLEVBQXFCLENBQUM7UUFDdEYsd0JBQW1CLEdBQXdCLElBQUksR0FBRyxFQUFrQixDQUFDO1FBQ3JFLHlCQUFvQixHQUF3QixJQUFJLEdBQUcsRUFBa0IsQ0FBQztRQUN0RSx1QkFBa0IsR0FBVyxDQUFDLENBQUM7UUFDL0IsK0JBQTBCLEdBQXFCLElBQUksNEJBQWMsQ0FBQyxHQUFHLENBQUMsQ0FBQztRQUN2RSxzQkFBaUIsR0FBeUIsSUFBSSxHQUFHLEVBQW1CLENBQUM7UUFhckUsaUNBQTRCLEdBQUcsaUJBQWlCLENBQUM7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\",\"assetPath\":\"Assets/Scripts/Multiplay/BlockMultiplay.ts\",\"manifest\":{\"properties\":[{\"assembly\":\"ZEPETO.World\",\"name\":\"multiplay\",\"type\":\"ZEPETO.World.ZepetoWorldMultiplay\",\"isArray\":false,\"initValue\":[],\"enumKeys\":[],\"enumValues\":[],\"attributes\":[]},{\"assembly\":\"UnityEngine.CoreModule\",\"name\":\"movingBlocks\",\"type\":\"UnityEngine.GameObject[]\",\"isArray\":true,\"initValue\":[],\"enumKeys\":[],\"enumValues\":[],\"attributes\":[]},{\"assembly\":\"UnityEngine.CoreModule\",\"name\":\"orbitingBlocks\",\"type\":\"UnityEngine.GameObject[]\",\"isArray\":true,\"initValue\":[],\"enumKeys\":[],\"enumValues\":[],\"attributes\":[]},{\"assembly\":\"UnityEngine.CoreModule\",\"name\":\"carrierParentPrefab\",\"type\":\"UnityEngine.GameObject\",\"isArray\":false,\"initValue\":[],\"enumKeys\":[],\"enumValues\":[],\"attributes\":[]},{\"assembly\":\"UnityEngine.CoreModule\",\"name\":\"respawnPoint\",\"type\":\"UnityEngine.Transform\",\"isArray\":false,\"initValue\":[],\"enumKeys\":[],\"enumValues\":[],\"attributes\":[]},{\"assembly\":\"UnityEngine.AnimationModule\",\"name\":\"moveBlockAnimator\",\"type\":\"UnityEngine.RuntimeAnimatorController\",\"isArray\":false,\"initValue\":[],\"enumKeys\":[],\"enumValues\":[],\"attributes\":[]},{\"assembly\":\"UnityEngine.AnimationModule\",\"name\":\"gesture\",\"type\":\"UnityEngine.AnimationClip\",\"isArray\":false,\"initValue\":[],\"enumKeys\":[],\"enumValues\":[],\"attributes\":[]}],\"name\":\"BlockMultiplay\",\"description\":\"\"},\"isCompiled\":true}"
+  typescriptHash: 938cf23681c19b6b38cb31cb33f40ac0
